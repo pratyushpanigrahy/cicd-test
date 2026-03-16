@@ -3,8 +3,7 @@ from office365.runtime.auth.authentication_context import AuthenticationContext
 from office365.sharepoint.client_context import ClientContext
 
 # Demo file paths
-DEMO_FILE_PATH_1 = "demo_file_1.txt"  # First demo file
-DEMO_FILE_PATH_2 = "demo_file_2.txt"  # Second demo file
+DEMO_FILE_PATHS = [f"demo_file_{i}.txt" for i in range(1, 11)]  # 10 demo files
 MERGED_FILE_PATH = "merged_demo_file.txt"  # Merged file
 SHAREPOINT_SITE_URL = "https://yourcompany.sharepoint.com/sites/yoursite"  # Replace with your SharePoint site URL
 USERNAME = "your-email@yourcompany.com"  # Replace with your SharePoint username
@@ -12,10 +11,13 @@ PASSWORD = "your-password"  # Replace with your SharePoint password
 SHAREPOINT_LIST_NAME = "YourListName"  # Replace with your SharePoint list name
 
 # Create demo files if they don't exist
-for demo_path, content in [
-    (DEMO_FILE_PATH_1, "This is the content of demo file 1.\n"),
-    (DEMO_FILE_PATH_2, "This is the content of demo file 2.\n")
-]:
+for i, demo_path in enumerate(DEMO_FILE_PATHS, 1):
+    content = f"This is the content of demo file {i}.\n"
+    try:
+        with open(demo_path, 'x') as f:
+            f.write(content)
+    except FileExistsError:
+        pass
     try:
         with open(demo_path, 'x') as f:
             f.write(content)
@@ -24,7 +26,7 @@ for demo_path, content in [
 
 # Merge both demo files into one
 with open(MERGED_FILE_PATH, 'w') as merged_file:
-    for demo_path in [DEMO_FILE_PATH_1, DEMO_FILE_PATH_2]:
+    for demo_path in DEMO_FILE_PATHS:
         with open(demo_path, 'r') as f:
             merged_file.write(f.read())
 
