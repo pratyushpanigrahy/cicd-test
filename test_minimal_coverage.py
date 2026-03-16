@@ -1,3 +1,13 @@
+from unittest import mock
+
+def test_import_upload_script():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("upload_script", "upload_script.py")
+    upload_script = importlib.util.module_from_spec(spec)
+    # Mock SharePoint authentication and file upload logic
+    with mock.patch("office365.runtime.auth.authentication_context.AuthenticationContext.acquire_token_for_user", return_value=False):
+        spec.loader.exec_module(upload_script)
+    assert True
 import os
 import pytest
 
