@@ -4,6 +4,7 @@ from unittest import mock
 
 MERGED_FILE_PATH = "merged_demo_file.txt"
 DEMO_FILE_PATHS = [f"demo_file_{i}.txt" for i in range(1, 11)]
+SALES_MERGED_FILE = r"C:\Users\pratyush.panigrahy\OneDrive - drmartens.com\files\sales_merged_all_regions.csv"
 
 @pytest.fixture(autouse=True)
 def cleanup_files():
@@ -48,3 +49,19 @@ def test_upload_script_main():
     from upload_script import main
     main()
     assert os.path.exists(MERGED_FILE_PATH)
+
+def test_sales_merger_merges_files():
+    from sales_merger import merge_regional_sales
+    merged_file = merge_regional_sales()
+    if merged_file:
+        assert os.path.exists(merged_file)
+        import pandas as pd
+        df = pd.read_csv(merged_file)
+        assert len(df) > 0
+        assert 'Sales_ID' in df.columns
+        assert 'Region' in df.columns
+
+def test_snowflake_loader_validates_data():
+    if os.path.exists(SALES_MERGED_FILE):
+        from snowflake_loader import validate_data
+        assert validate_data(SALES_MERGED_FILE) == True
