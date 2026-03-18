@@ -1,55 +1,32 @@
-import requests
-from office365.runtime.auth.authentication_context import AuthenticationContext
-from office365.sharepoint.client_context import ClientContext
+# Main orchestration script - coordinates data loading, transformation, and reading
+from data_loader import create_demo_files, load_demo_files
+from transformer import merge_files, transform_data
+from reader import read_merged_file, upload_to_sharepoint
 
-# Demo file paths
-DEMO_FILE_PATHS = [f"demo_file_{i}.txt" for i in range(1, 11)]  # 10 demo files
-MERGED_FILE_PATH = "merged_demo_file.txt"  # Merged file
-SHAREPOINT_SITE_URL = "https://yourcompany.sharepoint.com/sites/yoursite"  # Replace with your SharePoint site URL
-USERNAME = "your-email@yourcompany.com"  # Replace with your SharePoint username
-PASSWORD = "your-password"  # Replace with your SharePoint password
-SHAREPOINT_LIST_NAME = "YourListName"  # Replace with your SharePoint list name
+def main():
+    """Main function to orchestrate the ETL pipeline."""
+    print("=== Starting ETL Pipeline ===\n")
+    
+    # Step 1: Load data
+    print("Step 1: Loading data...")
+    create_demo_files()
+    loaded_files = load_demo_files()
+    print(f"Loaded {len(loaded_files)} files\n")
+    
+    # Step 2: Transform data
+    print("Step 2: Transforming data...")
+    merge_files()
+    stats = transform_data(loaded_files)
+    print(f"Transform stats: {stats}\n")
+    
+    # Step 3: Read and process
+    print("Step 3: Reading and processing...")
+    content = read_merged_file()
+    if content:
+        print(f"Merged file size: {len(content)} bytes")
+        print("\n=== ETL Pipeline Complete ===")
+        # Uncomment below to upload to SharePoint
+        # upload_to_sharepoint("merged_demo_file.txt")
 
-# Create demo files if they don't exist
-for i, demo_path in enumerate(DEMO_FILE_PATHS, 1):
-    content = f"This is the content of demo file {i}.\n"
-    try:
-        with open(demo_path, 'x') as f:
-            f.write(content)
-    except FileExistsError:
-        pass
-    try:
-        with open(demo_path, 'x') as f:
-            f.write(content)
-    except FileExistsError:
-        pass
-
-# Merge both demo files into one
-with open(MERGED_FILE_PATH, 'w') as merged_file:
-    for demo_path in DEMO_FILE_PATHS:
-        with open(demo_path, 'r') as f:
-            merged_file.write(f.read())
-
-# Authenticate and connect to SharePoint
-ctx_auth = AuthenticationContext(SHAREPOINT_SITE_URL)
-if ctx_auth.acquire_token_for_user(USERNAME, PASSWORD):
-    ctx = ClientContext(SHAREPOINT_SITE_URL, ctx_auth)
-    # Upload merged file
-    with open(MERGED_FILE_PATH, 'rb') as file_obj:
-        target_folder = ctx.web.lists.get_by_title(SHAREPOINT_LIST_NAME).rootFolder
-        name = MERGED_FILE_PATH
-        target_file = target_folder.upload_file(name, file_obj.read())
-        ctx.execute_query()
-        print(f"File '{name}' uploaded successfully.")
-    # Append metadata to SharePoint list
-    list_obj = ctx.web.lists.get_by_title(SHAREPOINT_LIST_NAME)
-    item_creation_info = {
-        'Title': name,
-        'FileName': name,
-        # Add more fields as needed
-    }
-    list_obj.add_item(item_creation_info)
-    ctx.execute_query()
-    print(f"Metadata for '{name}' appended to SharePoint list.")
-else:
-    print("Authentication failed. Please check your credentials.")
+if __name__ == "__main__":
+    main()
