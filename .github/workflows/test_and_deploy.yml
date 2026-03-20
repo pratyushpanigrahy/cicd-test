@@ -1,0 +1,94 @@
+name: Test and Deploy Pipeline
+
+on:
+  push:
+    branches: [ main, cicd_deployment_test ]
+  pull_request:
+    branches: [ main, cicd_deployment_test ]
+
+jobs:
+  test:
+    runs-on: windows-latest
+    
+    strategy:
+      matrix:
+        python-version: ['3.12']
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests office365-rest-python-client pytest pytest-cov pandas
+    
+    - name: Run tests with coverage
+      run: |
+        pytest --cov=. --cov-fail-under=60 --cov-report=xml --cov-report=html -v
+    
+    - name: Check test results
+      if: failure()
+      run: |
+        echo "Tests failed! Deployment cannot proceed."
+        exit 1
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: true
+      if: always()
+    
+    - name: Archive test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results
+        path: |
+          htmlcov/
+          .coverage
+    
+    - name: Print test summary
+      if: always()
+      run: |
+        echo "=== Test Execution Complete ==="
+        echo "All required tests must pass before deployment."
+        echo "Check artifacts for detailed coverage reports."
+    
+  deploy:
+    needs: test
+    runs-on: windows-latest
+    if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests office365-rest-python-client pytest pytest-cov pandas
+    
+    - name: Deploy to Production
+      run: |
+        echo "=== Deployment Starting ==="
+        echo "Branch: ${{ github.ref }}"
+        echo "Commit: ${{ github.sha }}"
+        echo "All tests passed successfully!"
+        echo ""
+        echo "=== Ready for Production Deployment ==="
+        echo "- Run sales_data_generator.py to generate regional sales data"
+        echo "- Run sales_merger.py to consolidate all regions"
+        echo "- Run snowflake_loader.py to validate and load to Snowflake"
+        echo "- Or run upload_script.py for complete ETL pipeline"
