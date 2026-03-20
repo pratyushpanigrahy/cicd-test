@@ -1,6 +1,4 @@
 import os
-from office365.runtime.auth.authentication_context import AuthenticationContext
-from office365.sharepoint.client_context import ClientContext
 
 # Reader Script - Reads merged file and uploads to SharePoint
 MERGED_FILE_PATH = "merged_demo_file.txt"
@@ -22,6 +20,9 @@ def read_merged_file():
 
 def upload_to_sharepoint(file_path):
     """Upload file to SharePoint and append metadata."""
+    from office365.runtime.auth.authentication_context import AuthenticationContext
+    from office365.sharepoint.client_context import ClientContext
+    
     ctx_auth = AuthenticationContext(SHAREPOINT_SITE_URL)
     if ctx_auth.acquire_token_for_user(USERNAME, PASSWORD):
         ctx = ClientContext(SHAREPOINT_SITE_URL, ctx_auth)
